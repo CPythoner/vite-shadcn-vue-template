@@ -4,6 +4,11 @@ import aiosqlite
 from typing import List, Optional
 from pydantic import BaseModel
 import os
+import logging
+
+# 配置日志
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -18,6 +23,12 @@ app.add_middleware(
 
 # 数据库路径
 DB_PATH = os.path.join(os.path.dirname(__file__), "..", "podcast.db")
+logger.info(f"Database path: {DB_PATH}")
+
+# 检查数据库文件是否存在
+if not os.path.exists(DB_PATH):
+    logger.error(f"Database file not found: {DB_PATH}")
+    raise FileNotFoundError(f"Database file not found: {DB_PATH}")
 
 # Pydantic 模型
 class Podcast(BaseModel):
@@ -54,24 +65,32 @@ class Episode(BaseModel):
 # API 路由
 @app.get("/api/podcasts", response_model=List[Podcast])
 async def get_podcasts(category: Optional[str] = None, level: Optional[str] = None):
-    async with aiosqlite.connect(DB_PATH) as db:
-        db.row_factory = aiosqlite.Row
+    try:
+        logger.info(f"Fetching podcasts - category: {category}, level: {level}")
+        async with aiosqlite.connect(DB_PATH) as db:
+            db.row_factory = aiosqlite.Row
 
-        sql = "SELECT * FROM podcasts"
-        params = []
+            sql = "SELECT * FROM podcasts"
+            params = []
 
-        if category:
-            sql += " WHERE category = ?"
-            params.append(category)
-        elif level:
-            sql += " WHERE level = ?"
-            params.append(level)
+            if category:
+                sql += " WHERE category = ?"
+                params.append(category)
+            elif level:
+                sql += " WHERE level = ?"
+                params.append(level)
 
-        sql += " ORDER BY latest_episode_at DESC"
+            sql += " ORDER BY latest_episode_at DESC"
 
-        async with db.execute(sql, params) as cursor:
-            rows = await cursor.fetchall()
-            return [dict(row) for row in rows]
+            logger.info(f"Executing SQL: {sql} with params: {params}")
+            async with db.execute(sql, params) as cursor:
+                rows = await cursor.fetchall()
+                result = [dict(row) for row in rows]
+                logger.info(f"Found {len(result)} podcasts")
+                return result
+    except Exception as e:
+        logger.error(f"Database error: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/api/podcasts/{podcast_id}", response_model=Podcast)
 async def get_podcast(podcast_id: int):
@@ -112,4 +131,10 @@ async def get_episode(episode_id: int):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=3000)
+    uvicorn.run(
+        app,
+        host="127.0.0.1",  # 改用 localhost
+        port=3000,
+        reload=True,
+        log_level="info"
+    )

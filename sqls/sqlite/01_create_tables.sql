@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS episodes (
   podcast_id INTEGER NOT NULL,
   title TEXT NOT NULL,
   description TEXT,
+  cover_url TEXT,
   audio_url TEXT NOT NULL,
   duration INTEGER,  -- 单位：秒
   published_at TEXT NOT NULL,
@@ -75,4 +76,4 @@ CREATE INDEX IF NOT EXISTS idx_transcripts_language ON transcripts(language);
 
 CREATE INDEX IF NOT EXISTS idx_segments_transcript ON transcript_segments(transcript_id);
 CREATE INDEX IF NOT EXISTS idx_segments_sequence ON transcript_segments(sequence);
-CREATE INDEX IF NOT EXISTS idx_segments_time ON transcript_segments(start_time, end_time); 
+CREATE INDEX IF NOT EXISTS idx_segments_time ON transcript_segments(start_time, end_time);

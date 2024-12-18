@@ -44,7 +44,7 @@
       <router-link
         v-for="podcast in podcasts"
         :key="podcast.id"
-        :to="`/podcast/${podcast.id}`"
+        :to="{ name: 'podcast-detail', params: { id: podcast.id.toString() } }"
         class="bg-white rounded-lg shadow hover:shadow-lg transition-shadow"
       >
         <img

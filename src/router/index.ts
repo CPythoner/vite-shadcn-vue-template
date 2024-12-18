@@ -1,10 +1,11 @@
-import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHistory } from 'vue-router'
+import type { RouteRecordRaw } from 'vue-router'
 import Home from '../views/Home.vue'
 import PodcastList from '../views/PodcastList.vue'
-import PodcastDetail from '../components/PodcastDetail.vue'
+import PodcastDetail from '../views/PodcastDetail.vue'
 import EpisodePlayer from '../views/EpisodePlayer.vue'
 
-const routes: Array<RouteRecordRaw> = [
+const routes: RouteRecordRaw[] = [
   {
     path: '/',
     name: 'Home',
@@ -12,18 +13,27 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: '/podcasts',
-    name: 'PodcastList',
-    component: PodcastList
+    name: 'podcasts',
+    component: PodcastList,
+    meta: {
+      title: '播客列表'
+    }
   },
   {
-    path: '/podcast',
-    name: 'PodcastDetail',
-    component: PodcastDetail
+    path: '/podcast/:id',
+    name: 'podcast-detail',
+    component: PodcastDetail,
+    meta: {
+      title: '播客详情'
+    }
   },
   {
     path: '/episode/:id',
-    name: 'EpisodePlayer',
-    component: EpisodePlayer
+    name: 'episode-player',
+    component: EpisodePlayer,
+    meta: {
+      title: '剧集播放'
+    }
   }
 ]
 

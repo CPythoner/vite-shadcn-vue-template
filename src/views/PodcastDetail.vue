@@ -1,111 +1,145 @@
 <template>
   <div class="container mx-auto px-4 py-8">
-    <!-- 播客信息 -->
-    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-      <h1 class="text-3xl font-bold mb-4">英语新闻早餐 #123</h1>
-      <div class="flex gap-4 mb-4">
-        <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded">初级</span>
-        <span class="bg-green-100 text-green-800 px-3 py-1 rounded">英语</span>
-      </div>
-      <p class="text-gray-600 mb-4">
-        本期我们将讨论最新的国际新闻，包括...
-      </p>
+    <!-- 加载状态 -->
+    <div v-if="loading" class="text-center py-8">
+      加载中...
     </div>
 
-    <!-- 音频播放器 -->
-    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-      <audio
-        ref="audioPlayer"
-        src="podcast-url.mp3"
-        @timeupdate="onTimeUpdate"
-      />
-      <div class="flex items-center gap-4 mb-4">
-        <button
-          @click="togglePlay"
-          class="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center"
-        >
-          {{ isPlaying ? '⏸' : '▶' }}
-        </button>
+    <!-- 错误提示 -->
+    <div v-if="error" class="text-red-500 text-center py-8">
+      {{ error }}
+    </div>
+
+    <!-- 播客详情 -->
+    <div v-if="podcast" class="mb-8">
+      <div class="flex flex-col md:flex-row gap-8">
+        <!-- 封面图 -->
+        <img
+          :src="podcast.cover_url"
+          :alt="podcast.title"
+          class="w-full md:w-64 h-64 object-cover rounded-lg shadow-lg"
+        />
+
+        <!-- 播客信息 -->
         <div class="flex-1">
-          <input
-            type="range"
-            min="0"
-            max="100"
-            v-model="currentTime"
-            @input="seekAudio"
-            class="w-full"
-          />
-        </div>
-        <select
-          v-model="playbackRate"
-          @change="changePlaybackRate"
-          class="px-2 py-1 border rounded"
-        >
-          <option value="0.75">0.75x</option>
-          <option value="1">1x</option>
-          <option value="1.25">1.25x</option>
-          <option value="1.5">1.5x</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- 字幕和文本 -->
-    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-      <div class="mb-4">
-        <h3 class="text-xl font-semibold mb-2">字幕</h3>
-        <div class="bg-gray-50 p-4 rounded">
-          <p class="mb-2">
-            [00:00] Welcome to today's English news podcast...
-          </p>
-          <p class="mb-2">
-            [00:15] Our first story today is about...
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <!-- 生词本 -->
-    <div class="bg-white rounded-lg shadow-lg p-6">
-      <h3 class="text-xl font-semibold mb-4">生词本</h3>
-      <div class="space-y-4">
-        <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
-          <div>
-            <span class="font-medium">vocabulary</span>
-            <span class="text-gray-500 ml-2">[vəˈkæbjələri]</span>
+          <h1 class="text-3xl font-bold mb-4">{{ podcast.title }}</h1>
+          <div class="flex gap-2 mb-4">
+            <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+              {{ podcast.level }}
+            </span>
+            <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+              {{ podcast.category }}
+            </span>
           </div>
-          <button class="text-blue-600">添加到生词本</button>
+          <p class="text-gray-600 mb-4">{{ podcast.description }}</p>
+          <div class="flex items-center text-gray-500 text-sm">
+            <span>{{ podcast.episode_count }}集</span>
+            <span class="mx-2">·</span>
+            <span>最近更新: {{ new Date(podcast.latest_episode_at).toLocaleDateString() }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 剧集列表 -->
+    <div v-if="episodes.length > 0" class="space-y-4">
+      <h2 class="text-2xl font-bold mb-6">所有剧集</h2>
+      <div
+        v-for="episode in episodesWithCover"
+        :key="episode.id"
+        class="bg-white rounded-lg shadow p-4 hover:shadow-lg transition-shadow"
+      >
+        <div class="flex items-start gap-4">
+          <!-- 剧集封面 -->
+          <img
+            :src="episode.displayCoverUrl"
+            :alt="episode.title"
+            class="w-24 h-24 object-cover rounded"
+          />
+
+          <!-- 剧集信息 -->
+          <div class="flex-1">
+            <h3 class="text-xl font-semibold mb-2">{{ episode.title }}</h3>
+            <p class="text-gray-600 mb-2 line-clamp-2">{{ episode.description }}</p>
+            <div class="flex items-center text-gray-500 text-sm">
+              <span>{{ formatDuration(episode.duration) }}</span>
+              <span class="mx-2">·</span>
+              <span>{{ new Date(episode.published_at).toLocaleDateString() }}</span>
+            </div>
+          </div>
+
+          <!-- 播放按钮 -->
+          <button
+            @click="playEpisode(episode)"
+            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-full"
+          >
+            播放
+          </button>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
-import { ref } from 'vue'
+<script setup lang="ts">
+import { ref, onMounted, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { PodcastAPI } from '@/lib/api'
+import type { Podcast, Episode } from '@/lib/types'
 
-const audioPlayer = ref(null)
-const isPlaying = ref(false)
-const currentTime = ref(0)
-const playbackRate = ref(1)
+const route = useRoute()
+const router = useRouter()
+const api = new PodcastAPI()
 
-const togglePlay = () => {
-  if (isPlaying.value) {
-    audioPlayer.value.pause()
-  } else {
-    audioPlayer.value.play()
+const podcast = ref<Podcast | null>(null)
+const episodes = ref<Episode[]>([])
+const loading = ref(false)
+const error = ref('')
+
+// 为每个剧集添加封面
+const episodesWithCover = computed(() => {
+  return episodes.value.map(episode => ({
+    ...episode,
+    displayCoverUrl: episode.cover_url || podcast.value?.cover_url
+  }))
+})
+
+// 加载播客详情和剧集列表
+async function loadPodcastAndEpisodes() {
+  loading.value = true
+  error.value = ''
+  try {
+    const podcastId = parseInt(route.params.id as string)
+    const [podcastData, episodesData] = await Promise.all([
+      api.getPodcast(podcastId),
+      api.getEpisodes(podcastId)
+    ])
+    podcast.value = podcastData
+    episodes.value = episodesData
+  } catch (e) {
+    error.value = '加载数据失败'
+    console.error(e)
+  } finally {
+    loading.value = false
   }
-  isPlaying.value = !isPlaying.value
 }
 
-const onTimeUpdate = (e) => {
-  currentTime.value = e.target.currentTime
+// 格式化时长
+function formatDuration(seconds: number): string {
+  const minutes = Math.floor(seconds / 60)
+  const hours = Math.floor(minutes / 60)
+  const remainingMinutes = minutes % 60
+
+  if (hours > 0) {
+    return `${hours}小时${remainingMinutes}分钟`
+  }
+  return `${minutes}分钟`
 }
 
-const seekAudio = () => {
-  audioPlayer.value.currentTime = currentTime.value
+// 播放剧集
+function playEpisode(episode: Episode) {
+  router.push(`/episode/${episode.id}`)
 }
 
-const changePlaybackRate = () => {
-  audioPlayer.value.playbackRate = playbackRate.value
-}
+onMounted(loadPodcastAndEpisodes)
 </script>

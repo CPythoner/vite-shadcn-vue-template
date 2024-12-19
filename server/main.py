@@ -62,6 +62,13 @@ class Episode(BaseModel):
     created_at: str
     updated_at: str
 
+class Subtitle(BaseModel):
+    id: int
+    start_time: float
+    end_time: float
+    text: str
+    translation: Optional[str] = None
+
 # API 路由
 @app.get("/api/podcasts", response_model=List[Podcast])
 async def get_podcasts(category: Optional[str] = None, level: Optional[str] = None):
@@ -128,6 +135,30 @@ async def get_episode(episode_id: int):
             if not row:
                 raise HTTPException(status_code=404, detail="Episode not found")
             return dict(row)
+
+@app.get("/api/episodes/{episode_id}/subtitles", response_model=List[Subtitle])
+async def get_episode_subtitles(episode_id: int):
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            """
+            SELECT id, start_time, end_time,
+                   text
+            FROM subtitles
+            WHERE episode_id = ?
+            ORDER BY start_time
+            """,
+            [episode_id]
+        ) as cursor:
+            rows = await cursor.fetchall()
+            # 确保返回的时间是数字类型
+            subtitles = []
+            for row in rows:
+                subtitle = dict(row)
+                subtitle['start_time'] = float(subtitle['start_time'])
+                subtitle['end_time'] = float(subtitle['end_time'])
+                subtitles.append(subtitle)
+            return subtitles
 
 if __name__ == "__main__":
     import uvicorn

@@ -13,7 +13,7 @@
           Back to Episodes
         </button>
 
-        <!-- 标题和时间 -->
+        <!-- 封面和标题信息 -->
         <div class="flex gap-6 mb-8">
           <!-- 封面图片 -->
           <img
@@ -36,7 +36,11 @@
           <!-- 进度条和时间 -->
           <div class="flex items-center gap-4 mb-4">
             <span class="text-sm text-gray-500 w-12">{{ formatTime(currentTime) }}</span>
-            <div class="flex-1 relative h-1 bg-gray-200 rounded cursor-pointer" @click="onProgressClick">
+            <div
+              class="flex-1 relative h-1 bg-gray-200 rounded cursor-pointer"
+              @click="onProgressClick"
+              ref="progressBar"
+            >
               <div
                 class="absolute h-full bg-blue-500 rounded"
                 :style="{ width: `${(currentTime / duration) * 100}%` }"
@@ -61,6 +65,7 @@
                 @change="changePlaybackRate"
                 class="text-sm border rounded px-2 py-1"
               >
+                <option value="0.75">0.75x</option>
                 <option value="1">1x</option>
                 <option value="1.25">1.25x</option>
                 <option value="1.5">1.5x</option>
@@ -94,31 +99,31 @@
             @ended="isPlaying = false"
           />
         </div>
-
-        <!-- 完整描述 -->
-        <div class="mt-8 bg-white rounded-lg shadow-sm p-6">
-          <h2 class="text-lg font-semibold mb-4">关于本集</h2>
-          <p class="text-gray-600">{{ episode?.description }}</p>
-        </div>
       </div>
 
       <!-- 右侧：字幕 -->
       <div class="w-1/2 border-l border-gray-200 min-h-screen">
         <div class="p-8">
           <h2 class="text-xl font-semibold mb-6">Transcript</h2>
-          <div class="space-y-4">
+          <div
+            class="space-y-4 h-[calc(100vh-12rem)] overflow-y-auto"
+            ref="subtitlesContainer"
+          >
             <div
-              v-for="segment in transcript"
-              :key="segment.start_time"
+              v-for="subtitle in subtitles"
+              :key="`${subtitle.start_time}-${subtitle.end_time}`"
+              :ref="el => { if (el) subtitleRefs[subtitle.start_time] = el }"
               :class="{
                 'p-4 rounded transition-colors cursor-pointer': true,
-                'bg-blue-50': isCurrentSegment(segment),
-                'hover:bg-gray-50': !isCurrentSegment(segment)
+                'bg-blue-50': isCurrentSubtitle(subtitle),
+                'hover:bg-gray-50': !isCurrentSubtitle(subtitle)
               }"
-              @click="seekTo(segment.start_time)"
+              @click="seekTo(subtitle.start_time)"
             >
-              <p class="text-gray-900">{{ segment.text }}</p>
-              <span class="text-sm text-gray-500">{{ formatTime(segment.start_time) }}</span>
+              <p class="text-gray-900">{{ subtitle.text }}</p>
+              <span class="text-sm text-gray-500">
+                {{ formatTime(subtitle.start_time) }}
+              </span>
             </div>
           </div>
         </div>
@@ -131,22 +136,15 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { PodcastAPI } from '@/lib/api'
-import type { Episode, Podcast } from '@/lib/types'
+import type { Episode } from '@/lib/types'
 import {
   ArrowLeft,
-  Settings,
-  Menu,
   Play,
   Pause,
-  SkipBack,
-  SkipForward,
   Volume2,
-  FileText,
-  Loader2,
-  AlertCircle
 } from 'lucide-vue-next'
 
-interface TranscriptSegment {
+interface Subtitle {
   start_time: number
   end_time: number
   text: string
@@ -157,41 +155,38 @@ const router = useRouter()
 const api = new PodcastAPI()
 
 const episode = ref<Episode | null>(null)
-const podcast = ref<Podcast | null>(null)
-const transcript = ref<TranscriptSegment[]>([])
-const loading = ref(false)
-const error = ref('')
+const subtitles = ref<Subtitle[]>([])
+const subtitleRefs = ref<Record<number, HTMLElement>>({})
+const subtitlesContainer = ref<HTMLElement | null>(null)
 
 const audioPlayer = ref<HTMLAudioElement | null>(null)
+const progressBar = ref<HTMLElement | null>(null)
 const isPlaying = ref(false)
 const currentTime = ref(0)
 const duration = ref(0)
 const playbackRate = ref('1')
 const volume = ref(1)
 
-// 计算属性：获取要显示的封面
 const coverUrl = computed(() => {
-  return episode.value?.cover_url || podcast.value?.cover_url
+  return episode.value?.cover_url || episode.value?.podcast?.cover_url || '/default-cover.jpg'
 })
 
 // 加载剧集和字幕
-async function loadEpisodeAndTranscript() {
-  loading.value = true
-  error.value = ''
+async function loadEpisodeAndSubtitles() {
   try {
     const episodeId = parseInt(route.params.id as string)
-    episode.value = await api.getEpisode(episodeId)
-    // 加载播客信息
-    if (episode.value) {
-      podcast.value = await api.getPodcast(episode.value.podcast_id)
-    }
-    // TODO: 加载字幕
-    // transcript.value = await api.getTranscript(episodeId)
+    const [episodeData, subtitlesData] = await Promise.all([
+      api.getEpisode(episodeId),
+      api.getEpisodeSubtitles(episodeId)
+    ])
+    episode.value = episodeData
+    subtitles.value = subtitlesData.map(subtitle => ({
+      ...subtitle,
+      start_time: Number(subtitle.start_time),
+      end_time: Number(subtitle.end_time)
+    }))
   } catch (e) {
-    error.value = '加载数据失败'
     console.error(e)
-  } finally {
-    loading.value = false
   }
 }
 
@@ -209,6 +204,7 @@ function togglePlay() {
 function onTimeUpdate() {
   if (!audioPlayer.value) return
   currentTime.value = audioPlayer.value.currentTime
+  scrollToCurrentSubtitle()
 }
 
 // 音频加载完成
@@ -231,53 +227,74 @@ function changeVolume() {
 
 // 格式化时间
 function formatTime(seconds: number): string {
-  const minutes = Math.floor(seconds / 60)
-  const remainingSeconds = Math.floor(seconds % 60)
+  const validSeconds = Number(seconds)
+  if (isNaN(validSeconds)) {
+    console.error('Invalid seconds value:', seconds)
+    return '0:00'
+  }
+  const minutes = Math.floor(validSeconds / 60)
+  const remainingSeconds = Math.floor(validSeconds % 60)
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
 }
 
-// 判断是否是当前播放的字幕段
-function isCurrentSegment(segment: TranscriptSegment): boolean {
-  return currentTime.value >= segment.start_time && currentTime.value < segment.end_time
+// 判断是否是当前字幕
+function isCurrentSubtitle(subtitle: Subtitle): boolean {
+  return currentTime.value >= subtitle.start_time && currentTime.value < subtitle.end_time
 }
 
 // 跳转到指定时间
 function seekTo(time: number) {
   if (!audioPlayer.value) return
-  audioPlayer.value.currentTime = time
+  const validTime = Number(time)
+  if (isNaN(validTime)) {
+    console.error('Invalid time value:', time)
+    return
+  }
+  audioPlayer.value.currentTime = validTime
   if (!isPlaying.value) {
     audioPlayer.value.play()
   }
 }
 
+// 点击进度条跳转
+function onProgressClick(event: MouseEvent) {
+  if (!progressBar.value || !audioPlayer.value) return
+  const rect = progressBar.value.getBoundingClientRect()
+  const percent = (event.clientX - rect.left) / rect.width
+  audioPlayer.value.currentTime = percent * duration.value
+}
+
+// 滚动到当前字幕
+function scrollToCurrentSubtitle() {
+  const currentSubtitle = subtitles.value.find(subtitle => isCurrentSubtitle(subtitle))
+  if (currentSubtitle && subtitlesContainer.value) {
+    const element = subtitleRefs.value[currentSubtitle.start_time]
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }
+}
+
 // 键盘快捷键
 function handleKeyPress(event: KeyboardEvent) {
+  if (!audioPlayer.value) return
+
   switch (event.code) {
     case 'Space':
       event.preventDefault()
       togglePlay()
       break
     case 'ArrowLeft':
-      skipBackward()
+      audioPlayer.value.currentTime -= 5
       break
     case 'ArrowRight':
-      skipForward()
+      audioPlayer.value.currentTime += 5
       break
-  }
-}
-
-// 点击进度条跳转
-function onProgressClick(event: MouseEvent) {
-  const progressBar = event.currentTarget as HTMLElement
-  const rect = progressBar.getBoundingClientRect()
-  const percent = (event.clientX - rect.left) / rect.width
-  if (audioPlayer.value) {
-    audioPlayer.value.currentTime = percent * duration.value
   }
 }
 
 onMounted(() => {
-  loadEpisodeAndTranscript()
+  loadEpisodeAndSubtitles()
   window.addEventListener('keydown', handleKeyPress)
 })
 

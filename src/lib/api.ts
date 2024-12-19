@@ -2,6 +2,13 @@ import type { Podcast, Episode } from './types'
 
 const API_BASE_URL = '/api'
 
+interface Subtitle {
+  id: number;
+  start_time: number;
+  end_time: number;
+  text: string;
+}
+
 export class PodcastAPI {
   // 获取所有播客
   async getAllPodcasts(): Promise<Podcast[]> {
@@ -85,6 +92,21 @@ export class PodcastAPI {
       if (!response.ok) {
         const error = await response.json()
         throw new Error(error.detail || 'Failed to fetch podcasts')
+      }
+      return response.json()
+    } catch (error) {
+      console.error('API Error:', error)
+      throw error
+    }
+  }
+
+  // 获取剧集字幕
+  async getEpisodeSubtitles(episodeId: number): Promise<Subtitle[]> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/episodes/${episodeId}/subtitles`)
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.detail || 'Failed to fetch subtitles')
       }
       return response.json()
     } catch (error) {

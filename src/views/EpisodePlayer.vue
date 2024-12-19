@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
-    <!-- 左右布局容器 -->
-    <div class="flex flex-col lg:flex-row min-h-screen">
+  <div class="min-h-screen bg-gray-50 flex flex-col">
+    <!-- 主要内容区域 -->
+    <div class="flex flex-col lg:flex-row flex-1 pb-[200px]">
       <!-- 左侧：播放器 -->
       <div class="w-full lg:w-1/2 p-4 lg:p-8">
         <!-- 返回按钮 -->
@@ -29,75 +29,6 @@
             </p>
             <p class="text-gray-600 mt-4 line-clamp-2">{{ episode?.description }}</p>
           </div>
-        </div>
-
-        <!-- 播放器卡片 -->
-        <div class="bg-white rounded-lg shadow-sm p-4 lg:p-6">
-          <!-- 进度条和时间 -->
-          <div class="flex items-center gap-4 mb-4">
-            <span class="text-sm text-gray-500 w-12">{{ formatTime(currentTime) }}</span>
-            <div
-              class="flex-1 relative h-1 bg-gray-200 rounded cursor-pointer"
-              @click="onProgressClick"
-              ref="progressBar"
-            >
-              <div
-                class="absolute h-full bg-blue-500 rounded"
-                :style="{ width: `${(currentTime / duration) * 100}%` }"
-              ></div>
-            </div>
-            <span class="text-sm text-gray-500 w-12">{{ formatTime(duration) }}</span>
-          </div>
-
-          <!-- 播放控制 -->
-          <div class="flex flex-col sm:flex-row items-center gap-4 sm:justify-between">
-            <!-- 左侧：播放控制 -->
-            <div class="flex items-center gap-4">
-              <button
-                class="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-gray-900"
-                @click="togglePlay"
-              >
-                <Play v-if="!isPlaying" class="w-5 h-5" />
-                <Pause v-else class="w-5 h-5" />
-              </button>
-              <select
-                v-model="playbackRate"
-                @change="changePlaybackRate"
-                class="text-sm border rounded px-2 py-1"
-              >
-                <option value="0.75">0.75x</option>
-                <option value="1">1x</option>
-                <option value="1.25">1.25x</option>
-                <option value="1.5">1.5x</option>
-                <option value="2">2x</option>
-              </select>
-            </div>
-
-            <!-- 右侧：音量控制 -->
-            <div class="flex items-center gap-2">
-              <Volume2 class="w-4 h-4 text-gray-600" />
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                v-model="volume"
-                @input="changeVolume"
-                class="w-24 sm:w-20"
-              />
-            </div>
-          </div>
-
-          <!-- 隐藏的音频元素 -->
-          <audio
-            ref="audioPlayer"
-            :src="episode?.audio_url"
-            @timeupdate="onTimeUpdate"
-            @loadedmetadata="onMetadataLoaded"
-            @play="isPlaying = true"
-            @pause="isPlaying = false"
-            @ended="isPlaying = false"
-          />
         </div>
       </div>
 
@@ -131,6 +62,81 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 固定在底部的播放器 -->
+    <div class="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg">
+      <div class="max-w-screen-2xl mx-auto px-4">
+        <!-- 播放器卡片 -->
+        <div class="py-3">
+          <!-- 播放控制栏 -->
+          <div class="flex items-center gap-4 mb-3">
+            <!-- 左侧：播放按钮 -->
+            <button
+              class="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-gray-900"
+              @click="togglePlay"
+            >
+              <Play v-if="!isPlaying" class="w-5 h-5" />
+              <Pause v-else class="w-5 h-5" />
+            </button>
+
+            <!-- 时间显示 -->
+            <span class="text-sm text-gray-500 w-12">{{ formatTime(currentTime) }}</span>
+
+            <!-- 中间：进度条 -->
+            <div
+              class="flex-1 relative h-1 bg-gray-200 rounded cursor-pointer"
+              @click="onProgressClick"
+              ref="progressBar"
+            >
+              <div
+                class="absolute h-full bg-blue-500 rounded"
+                :style="{ width: `${(currentTime / duration) * 100}%` }"
+              ></div>
+            </div>
+
+            <!-- 总时长 -->
+            <span class="text-sm text-gray-500 w-12">{{ formatTime(duration) }}</span>
+
+            <!-- 右侧：倍速和音量控制 -->
+            <select
+              v-model="playbackRate"
+              @change="changePlaybackRate"
+              class="text-sm border rounded px-2 py-1"
+            >
+              <option value="0.75">0.75x</option>
+              <option value="1">1x</option>
+              <option value="1.25">1.25x</option>
+              <option value="1.5">1.5x</option>
+              <option value="2">2x</option>
+            </select>
+
+            <div class="flex items-center gap-2">
+              <Volume2 class="w-4 h-4 text-gray-600" />
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.1"
+                v-model="volume"
+                @input="changeVolume"
+                class="w-20"
+              />
+            </div>
+          </div>
+
+          <!-- 隐藏的音频元素 -->
+          <audio
+            ref="audioPlayer"
+            :src="episode?.audio_url"
+            @timeupdate="onTimeUpdate"
+            @loadedmetadata="onMetadataLoaded"
+            @play="isPlaying = true"
+            @pause="isPlaying = false"
+            @ended="isPlaying = false"
+          />
         </div>
       </div>
     </div>

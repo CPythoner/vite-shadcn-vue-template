@@ -106,7 +106,7 @@
         <div class="p-8">
           <h2 class="text-xl font-semibold mb-6">Transcript</h2>
           <div
-            class="space-y-4 h-[calc(100vh-12rem)] overflow-y-auto"
+            class="space-y-3 h-[calc(100vh-12rem)] overflow-y-auto px-2"
             ref="subtitlesContainer"
           >
             <div
@@ -114,16 +114,21 @@
               :key="`${subtitle.start_time}-${subtitle.end_time}`"
               :ref="el => { if (el) subtitleRefs[subtitle.start_time] = el }"
               :class="{
-                'p-4 rounded transition-colors cursor-pointer': true,
-                'bg-blue-50': isCurrentSubtitle(subtitle),
-                'hover:bg-gray-50': !isCurrentSubtitle(subtitle)
+                'flex gap-4 py-2 transition-all duration-300 cursor-pointer': true,
+                'text-base opacity-70': !isCurrentSubtitle(subtitle),
+                'text-lg font-medium': isCurrentSubtitle(subtitle)
               }"
               @click="seekTo(subtitle.start_time)"
             >
-              <p class="text-gray-900">{{ subtitle.text }}</p>
-              <span class="text-sm text-gray-500">
+              <span class="text-gray-400 w-12 flex-shrink-0">
                 {{ formatTime(subtitle.start_time) }}
               </span>
+              <div class="flex-1">
+                <p class="text-gray-900">{{ subtitle.text }}</p>
+                <p v-if="subtitle.translation" class="text-gray-500 mt-1">
+                  {{ subtitle.translation }}
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -148,6 +153,7 @@ interface Subtitle {
   start_time: number
   end_time: number
   text: string
+  translation?: string
 }
 
 const route = useRoute()

@@ -1,9 +1,9 @@
 <template>
   <div class="min-h-screen bg-gray-50">
     <!-- 左右布局容器 -->
-    <div class="flex">
+    <div class="flex flex-col lg:flex-row min-h-screen">
       <!-- 左侧：播放器 -->
-      <div class="w-1/2 p-8">
+      <div class="w-full lg:w-1/2 p-4 lg:p-8">
         <!-- 返回按钮 -->
         <button
           @click="router.back()"
@@ -14,12 +14,12 @@
         </button>
 
         <!-- 封面和标题信息 -->
-        <div class="flex gap-6 mb-8">
+        <div class="flex flex-col sm:flex-row gap-4 lg:gap-6 mb-8">
           <!-- 封面图片 -->
           <img
             :src="coverUrl"
             :alt="episode?.title"
-            class="w-32 h-32 object-cover rounded-lg shadow-sm flex-shrink-0"
+            class="w-full sm:w-32 h-32 object-cover rounded-lg shadow-sm flex-shrink-0"
           />
           <!-- 标题和信息 -->
           <div>
@@ -32,7 +32,7 @@
         </div>
 
         <!-- 播放器卡片 -->
-        <div class="bg-white rounded-lg shadow-sm p-6">
+        <div class="bg-white rounded-lg shadow-sm p-4 lg:p-6">
           <!-- 进度条和时间 -->
           <div class="flex items-center gap-4 mb-4">
             <span class="text-sm text-gray-500 w-12">{{ formatTime(currentTime) }}</span>
@@ -50,7 +50,7 @@
           </div>
 
           <!-- 播放控制 -->
-          <div class="flex items-center justify-between">
+          <div class="flex flex-col sm:flex-row items-center gap-4 sm:justify-between">
             <!-- 左侧：播放控制 -->
             <div class="flex items-center gap-4">
               <button
@@ -83,7 +83,7 @@
                 step="0.1"
                 v-model="volume"
                 @input="changeVolume"
-                class="w-20"
+                class="w-24 sm:w-20"
               />
             </div>
           </div>
@@ -102,11 +102,11 @@
       </div>
 
       <!-- 右侧：字幕 -->
-      <div class="w-1/2 border-l border-gray-200 min-h-screen">
-        <div class="p-8">
+      <div class="w-full lg:w-1/2 border-t lg:border-t-0 lg:border-l border-gray-200 flex flex-col flex-1">
+        <div class="p-8 flex-1 flex flex-col">
           <h2 class="text-xl font-semibold mb-6">Transcript</h2>
           <div
-            class="space-y-3 h-[calc(100vh-12rem)] overflow-y-auto px-2"
+            class="space-y-3 flex-1 overflow-y-auto px-2"
             ref="subtitlesContainer"
           >
             <div

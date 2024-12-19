@@ -3,37 +3,39 @@
     <!-- 主要内容区域 -->
     <div class="flex flex-col lg:flex-row flex-1 pb-[200px]">
       <!-- 左侧：播放器 -->
-      <div class="w-full lg:w-1/2 p-4 lg:p-8">
-        <!-- 返回按钮 -->
-        <button
-          @click="router.back()"
-          class="flex items-center text-gray-600 hover:text-gray-900 mb-6"
-        >
-          <ArrowLeft class="w-5 h-5 mr-2" />
-          Back to Episodes
-        </button>
+      <div class="w-full lg:w-2/5 p-4 lg:p-8 lg:sticky lg:top-0 lg:h-screen">
+        <div class="lg:flex lg:flex-col lg:h-full">
+          <!-- 返回按钮 -->
+          <button
+            @click="router.back()"
+            class="flex items-center text-gray-600 hover:text-gray-900 mb-6"
+          >
+            <ArrowLeft class="w-5 h-5 mr-2" />
+            Back to Episodes
+          </button>
 
-        <!-- 封面和标题信息 -->
-        <div class="flex flex-col sm:flex-row gap-4 lg:gap-6 mb-8">
-          <!-- 封面图片 -->
-          <img
-            :src="coverUrl"
-            :alt="episode?.title"
-            class="w-full sm:w-32 h-32 object-cover rounded-lg shadow-sm flex-shrink-0"
-          />
-          <!-- 标题和信息 -->
-          <div>
-            <h1 class="text-2xl font-bold mb-2">{{ episode?.title }}</h1>
-            <p class="text-gray-500">
-              {{ new Date(episode?.published_at || '').toLocaleDateString() }}
-            </p>
-            <p class="text-gray-600 mt-4 line-clamp-2">{{ episode?.description }}</p>
+          <!-- 封面和标题信息 -->
+          <div class="flex flex-col gap-6 mb-8 lg:flex-1 lg:items-center lg:justify-center">
+            <!-- 封面图片 -->
+            <img
+              :src="coverUrl"
+              :alt="episode?.title"
+              class="w-full max-w-[240px] aspect-square object-cover rounded-lg shadow-sm"
+            />
+            <!-- 标题和信息 -->
+            <div class="text-center">
+              <h1 class="text-2xl font-bold mb-2">{{ episode?.title }}</h1>
+              <p class="text-gray-500">
+                {{ new Date(episode?.published_at || '').toLocaleDateString() }}
+              </p>
+              <p class="text-gray-600 mt-4 max-w-md mx-auto">{{ episode?.description }}</p>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- 右侧：字幕 -->
-      <div class="w-full lg:w-1/2 border-t lg:border-t-0 lg:border-l border-gray-200 flex flex-col flex-1">
+      <div class="w-full lg:w-3/5 border-t lg:border-t-0 lg:border-l border-gray-200 flex flex-col flex-1">
         <div class="p-8 flex-1 flex flex-col">
           <h2 class="text-xl font-semibold mb-6">Transcript</h2>
           <div

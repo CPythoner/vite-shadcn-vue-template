@@ -3,32 +3,34 @@
     <!-- 主要内容区域 -->
     <div class="flex flex-col lg:flex-row flex-1 pb-[200px]">
       <!-- 左侧：播放器 -->
-      <div class="w-full lg:w-2/5 p-4 lg:p-8 lg:sticky lg:top-0 lg:h-screen">
-        <div class="lg:flex lg:flex-col lg:h-full">
+      <div class="w-full lg:w-2/5 p-4 lg:p-8 lg:sticky lg:top-0 lg:h-screen overflow-y-auto">
+        <div class="lg:flex lg:flex-col lg:h-full lg:max-w-[400px] lg:mx-auto lg:min-h-[600px]">
           <!-- 返回按钮 -->
           <button
             @click="router.back()"
-            class="flex items-center text-gray-600 hover:text-gray-900 mb-6"
+            class="flex items-center text-gray-600 hover:text-gray-900 mb-6 lg:mb-4"
           >
             <ArrowLeft class="w-5 h-5 mr-2" />
             Back to Episodes
           </button>
 
           <!-- 封面和标题信息 -->
-          <div class="flex flex-col gap-6 mb-8 lg:flex-1 lg:items-center lg:justify-center">
+          <div class="flex flex-col gap-4 lg:gap-6 lg:flex-1 lg:items-center lg:justify-center">
             <!-- 封面图片 -->
             <img
               :src="coverUrl"
               :alt="episode?.title"
-              class="w-full max-w-[240px] aspect-square object-cover rounded-lg shadow-sm"
+              class="w-full max-w-[200px] aspect-square object-cover rounded-lg shadow-sm mx-auto"
             />
             <!-- 标题和信息 -->
-            <div class="text-center">
-              <h1 class="text-2xl font-bold mb-2">{{ episode?.title }}</h1>
+            <div class="text-center max-w-full">
+              <h1 class="text-xl lg:text-2xl font-bold mb-2 break-words">{{ episode?.title }}</h1>
               <p class="text-gray-500">
                 {{ new Date(episode?.published_at || '').toLocaleDateString() }}
               </p>
-              <p class="text-gray-600 mt-4 max-w-md mx-auto">{{ episode?.description }}</p>
+              <p class="text-gray-600 mt-2 text-sm lg:text-base break-words line-clamp-4 lg:line-clamp-none">
+                {{ episode?.description }}
+              </p>
             </div>
           </div>
         </div>

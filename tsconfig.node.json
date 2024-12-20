@@ -11,5 +11,9 @@
     "lib": ["ES2020"],
     "types": ["node"]
   },
-  "include": ["scripts/**/*", "src/lib/db.ts"]
+  "include": [
+    "scripts/**/*",
+    "src/lib/db.ts",
+    "server/**/*"
+  ]
 }

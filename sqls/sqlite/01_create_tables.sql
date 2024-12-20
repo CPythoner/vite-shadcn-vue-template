@@ -25,13 +25,13 @@ CREATE TABLE IF NOT EXISTS episodes (
   description TEXT,
   cover_url TEXT,
   audio_url TEXT NOT NULL,
-  duration INTEGER,  -- 单位：秒
-  published_at TEXT NOT NULL,
-  episode_number INTEGER,
+  duration INTEGER,
+  published_at TIMESTAMP NOT NULL,
+  episode_number INTEGER NOT NULL DEFAULT 1,
   default_transcript_id INTEGER,
-  created_at TEXT NOT NULL DEFAULT (datetime('now')),
-  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-  FOREIGN KEY (podcast_id) REFERENCES podcasts(id) ON DELETE CASCADE
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (podcast_id) REFERENCES podcasts(id)
 );
 
 -- 创建字幕表
@@ -77,3 +77,7 @@ CREATE INDEX IF NOT EXISTS idx_transcripts_language ON transcripts(language);
 CREATE INDEX IF NOT EXISTS idx_segments_transcript ON transcript_segments(transcript_id);
 CREATE INDEX IF NOT EXISTS idx_segments_sequence ON transcript_segments(sequence);
 CREATE INDEX IF NOT EXISTS idx_segments_time ON transcript_segments(start_time, end_time);
+
+-- 创建索引以优化查询
+CREATE INDEX IF NOT EXISTS idx_episodes_podcast_published
+ON episodes(podcast_id, published_at);

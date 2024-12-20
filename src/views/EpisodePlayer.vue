@@ -24,6 +24,7 @@
             />
             <!-- 标题和信息 -->
             <div class="text-center max-w-full">
+              <p class="text-sm text-gray-500 mb-1">Episode {{ episode?.episode_number }}</p>
               <h1 class="text-xl lg:text-2xl font-bold mb-2 break-words">{{ episode?.title }}</h1>
               <p class="text-gray-500">
                 {{ new Date(episode?.published_at || '').toLocaleDateString() }}

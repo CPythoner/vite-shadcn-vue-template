@@ -20,13 +20,13 @@ export interface Episode {
   id: number
   podcast_id: number
   title: string
-  description: string
-  cover_url: string | null
+  description?: string
+  cover_url?: string
   audio_url: string
-  duration: number
+  duration?: number
   published_at: string
   episode_number: number
-  default_transcript_id: number | null
+  default_transcript_id?: number
   created_at: string
   updated_at: string
 }

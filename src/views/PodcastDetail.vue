@@ -65,6 +65,8 @@
               <span>{{ formatDuration(episode.duration) }}</span>
               <span class="mx-2">·</span>
               <span>{{ new Date(episode.published_at).toLocaleDateString() }}</span>
+              <span class="mx-2">·</span>
+              <span>第 {{ episode.episode_number }} 集</span>
             </div>
           </div>
 
